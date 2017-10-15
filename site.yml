@@ -1,0 +1,21 @@
+---
+- name: Install WP, Nginx and PHP-FPM
+  hosts: webserver
+  become: yes
+  become_user: "{{ user_instance }}"
+  become_method: sudo
+  roles:
+    - base
+    - nginx
+    - php-fpm
+    - wordpress
+
+- name: Install Database
+  hosts: db
+  become: yes
+  become_user: "{{ user_instance }}"
+  become_method: sudo
+  roles:
+    - base
+    - mysql
+

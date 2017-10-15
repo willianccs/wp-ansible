@@ -1,0 +1,28 @@
+---
+- name: Instalar Repositorio EPEL
+  yum: name=epel-release state=latest
+
+- name: Instalar pacotes essenciais
+  yum: name={{ item }} state=present
+  with_items:
+    - libselinux-python
+    - libsemanage-python
+    - net-tools
+
+- name: Reload no ansible_facts
+  setup:
+
+#- name: Copiar o EPEL file
+#  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+
+#- name: Criar GPG key
+#  copy: src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+
+- name: Configurar regras firewall
+  copy: src=iptables-save dest=/etc/sysconfig/iptables
+  notify: restart firewalld
+
+- name: set "httpd_can_network_connect" flag on
+  seboolean: name={{ item }} state=yes persistent=yes
+  with_items:
+    - httpd_can_network_connect

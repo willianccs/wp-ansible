@@ -1,0 +1,42 @@
+---
+- name: Install deps
+  yum: name={{ item }} state=present
+  with_items:
+    - MySQL-python
+    - php-mysql
+    - php-gd
+    - unzip
+
+#- name: Download WordPress
+#  get_url: url=http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/srv/wordpress-{{ wp_version }}.tar.gz
+
+- name: Download and Extract archive
+  unarchive:
+    src: http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/srv/wordpress-{{ wp_version }}.tar.gz
+    dest: /srv/wordpress
+    remote_src: yes
+    creates: /srv/wordpress
+
+#  command: chdir=/srv/ /bin/tar xvf wordpress-{{ wp_version }}.tar.gz creates=/srv/wordpress
+
+- name: Add group "wordpress"
+  group: name=wordpress
+
+- name: Add user "wordpress"
+  user: name=wordpress group=wordpress home=/srv/wordpress/
+
+- name: Fetch random salts for WordPress config
+  local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
+  register: "wp_salt"
+  become: no
+  become_method: sudo
+
+- name: Copy WordPress config file
+  template: src=wp-config.php.j2 dest=/srv/wordpress/wp-config.php
+
+- name: Change ownership of WordPress installation
+  file: path=/srv/wordpress/ owner=wordpress group=wordpress state=directory recurse=yes setype=httpd_sys_content_t
+
+- name: Start php-fpm Service
+  service: name=php-fpm state=started enabled=yes
+
